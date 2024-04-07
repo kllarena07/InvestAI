@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Input from '$lib/components/ui/input/input.svelte';
+	import type { ActionData } from '../$types.js';
 
 	export let data;
 
@@ -12,15 +13,24 @@
 
 	let messageHistory: Message[] = [];
 
-	const appendMessage = (message: string) => {
-		messageHistory = [...messageHistory, { user: 'You', content: message }];
+	const appendMessage = (user_type: string, message: string) => {
+		messageHistory = [...messageHistory, { user: user_type, content: message }];
 	};
 
 	let currentMessage: string;
+	export let form: ActionData;
+
+	$: {
+		if (form) {
+			appendMessage('Assistant', form.llm_response);
+		}
+	}
 </script>
 
 <main class="w-full h-dvh">
-	<h1 class="text-3xl font-bold pt-3 text-center">Chatting about TICKR: {data.tickr}</h1>
+	<h1 class="text-3xl font-bold pt-3 text-center">
+		Chatting about TICKR: {data.tickr.toUpperCase()}
+	</h1>
 	<section class="flex w-full h-[calc(100%-116px)] justify-center">
 		<ul class="w-4/5 overflow-y-scroll">
 			{#each messageHistory as { user, content }}
@@ -37,16 +47,12 @@
 		method="POST"
 		class="flex justify-center pb-7"
 		on:submit={() => {
-			appendMessage(currentMessage);
+			appendMessage('You', currentMessage);
 		}}
-		use:enhance={() => {
-			return async ({ update }) => {
-				update({ reset: false });
-			};
-		}}
+		use:enhance
 	>
 		<div class="flex w-4/5">
-			<Input placeholder="Message assistant" bind:value={currentMessage} />
+			<Input name="query" placeholder="Message assistant" bind:value={currentMessage} />
 			<Button type="submit">
 				<svg
 					width="24"
